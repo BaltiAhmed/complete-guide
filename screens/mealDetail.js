@@ -1,37 +1,92 @@
-import React from 'react'
-import { View, Text, StyleSheet, Button } from 'react-native'
-import { MEALS } from '../data/dummy-data'
+import React, { useEffect, useCallback } from 'react'
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native'
 import HeadButtons from '../components/headerButton'
 import { HeaderButtons, Item } from 'react-navigation-header-buttons';
+import DefaultText from '../components/defaultText'
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleFavorite } from '../store/actions/meals';
 
 
-const MealDetail = props => {
-    const mealId = props.navigation.getParam('mealId')
-    const selectedMeal = MEALS.find(meal => meal.id === mealId)
+const ListItem = props => {
     return (
-        <View>
-            <Text>
-                {selectedMeal.title}
-            </Text>
-            <Button title='Go back' onPress={() => {
-                props.navigation.popToTop()
-            }} />
+        <View style={styles.listItem}>
+            <DefaultText>{props.children}</DefaultText>
         </View>
     )
 }
 
+
+const MealDetail = props => {
+    const availableMeals = useSelector(state =>
+        state.meals.meals
+    )
+    const mealId = props.navigation.getParam('mealId')
+    const currentMealIsFav = useSelector(state =>
+        state.meals.favoriteMeals.some(meal => meal.id === mealId)
+    )
+
+    const selectedMeal = availableMeals.find(meal => meal.id === mealId)
+
+    const dispatch = useDispatch()
+
+    const toggleFavHundler = useCallback(() => {
+        dispatch(toggleFavorite(mealId))
+    }, [dispatch, mealId])
+
+    useEffect(() => {
+        props.navigation.setParams({ mealTitle: selectedMeal.title, toggleFav: toggleFavHundler, isFav: currentMealIsFav })
+
+    }, [selectedMeal, toggleFavHundler, currentMealIsFav])
+
+    return (
+        <ScrollView>
+            <Image source={{ uri: selectedMeal.imageUrl }} style={styles.image} />
+            <View style={styles.details}>
+                <DefaultText>
+                    {selectedMeal.duration}m
+                        </DefaultText>
+                <DefaultText>
+                    {selectedMeal.complexity.toUpperCase()}
+                </DefaultText>
+                <DefaultText>
+                    {selectedMeal.affordability.toUpperCase()}
+                </DefaultText>
+            </View>
+            <Text style={styles.title}>
+                Ingredients
+            </Text>
+
+            {selectedMeal.ingredients.map(ingredient => (
+                <ListItem key={ingredient}>{ingredient}</ListItem>
+            ))}
+
+
+            <Text style={styles.title}>
+                Steps
+            </Text>
+
+            {selectedMeal.steps.map(step => (
+                <ListItem key={step}>{step}</ListItem>
+            ))}
+
+
+        </ScrollView>
+    )
+}
+
 MealDetail.navigationOptions = (navigationData) => {
-    const mealId = navigationData.navigation.getParam('mealId')
-    const selectedMeal = MEALS.find(meal => meal.id === mealId)
+    /* const mealId = navigationData.navigation.getParam('mealId')
+    const selectedMeal = MEALS.find(meal => meal.id === mealId) */
+    const mealTitle = navigationData.navigation.getParam('mealTitle')
+    const toggleFavFunc = navigationData.navigation.getParam('toggleFav')
+    const isFavorite = navigationData.navigation.getParam('isFav')
     return {
-        headerTitle: selectedMeal.title,
+        headerTitle: mealTitle,
         headerRight: <HeaderButtons HeaderButtonComponent={HeadButtons}>
             <Item
                 title='Favorite'
-                iconName='ios-star'
-                onPress={() => {
-                    console.log('add to favorite!!')
-                 }}
+                iconName={isFavorite ?'ios-star' : 'ios-star-outline'}
+                onPress={toggleFavFunc}
             />
         </HeaderButtons>
     }
@@ -39,10 +94,25 @@ MealDetail.navigationOptions = (navigationData) => {
 }
 
 const styles = StyleSheet.create({
-    screen: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
+    image: {
+        width: '100%',
+        height: 200
+    },
+    details: {
+        flexDirection: 'row',
+        padding: 15,
+        justifyContent: 'space-around',
+    },
+    title: {
+        fontSize: 22,
+        textAlign: 'center'
+    },
+    listItem: {
+        marginVertical: 10,
+        marginHorizontal: 20,
+        borderColor: '#ccc',
+        borderWidth: 1,
+        padding: 10
     }
 })
 

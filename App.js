@@ -1,16 +1,27 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet} from 'react-native';
 import MealNavigator from "./navigation/mealsNavigator";
-import {enableScreens} from 'react-native-screens';
+import { enableScreens } from 'react-native-screens';
+import { createStore, combineReducers } from 'redux'
+import { Provider } from 'react-redux'
+import mealsReducers from './store/reducers/meals'
 
 
 enableScreens();
 
+const routeReducer = combineReducers({
+  meals: mealsReducers
+})
+
+const store = createStore(routeReducer)
+
 
 export default function App() {
   return (
-    <MealNavigator />
+    <Provider store={store}>
+      <MealNavigator />
+    </Provider>
   );
 }
 
